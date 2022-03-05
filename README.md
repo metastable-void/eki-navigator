@@ -5,6 +5,7 @@ Eki Navigator (駅ナビゲーター) は有志制作の時刻表アプリです
 ## License
 
   Eki Navigator
+
   Copyright (C) 2022 真空 et al.
 
   This program is free software: you can redistribute it and/or modify
