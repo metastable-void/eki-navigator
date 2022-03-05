@@ -1,0 +1,46 @@
+{
+	"manifest_version": 2,
+	"name": "駅ナビゲーター",
+	"version": "1",
+	"browser_specific_settings": {
+  	"gecko": {
+			"id": "eki-navigator@menhera.org"
+		}
+	},
+	"default_locale": "ja",
+	"author": "真空",
+	"homepage_url": "https://github.com/metastable-void/eki-navigator",
+	"description": "__MSG_extensionDescription__",
+	"permissions": [
+		"*://*.ekitan.com/*",
+		"storage"
+	],
+	"incognito": "not_allowed",
+	"background": {
+		"page": "background/background.html"
+	},
+	"browser_action": {
+		"browser_style": true,
+		"default_icon": {
+			"16": "img/transit_black.svg"
+		},
+		"default_title": "__MSG_browserActionTitle__",
+		"default_popup": "popup/popup.html",
+		"theme_icons": [
+			{
+				"size": 16,
+				"light": "img/transit_white.svg",
+				"dark": "img/transit_black.svg"
+			}
+		]
+	},
+	"options_ui": {
+		"page": "options/options.html",
+		"browser_style": true,
+		"open_in_tab": false
+	},
+	"icons": {
+		"48": "img/icon.svg",
+		"96": "img/icon.svg"
+	}
+}
