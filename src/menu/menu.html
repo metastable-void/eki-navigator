@@ -1,5 +1,4 @@
-// vim: ts=2 sw=2 et ai
-/*
+<!-- vim: set ts=2 sw=2 et ai :
   Eki Navigator
   Copyright (C) 2022 真空 et al.
 
@@ -15,10 +14,18 @@
 
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
-
-document.querySelector('#button-open').addEventListener('click', (ev) => {
-  browser.tabs.create({
-    url: browser.runtime.getURL('/menu/menu.html'),
-  });
-});
+-->
+<!DOCTYPE html>
+<html xmlns='http://www.w3.org/1999/xhtml' lang='ja'>
+  <head>
+    <meta charset='utf-8'/>
+    <title></title>
+    <link rel='stylesheet' href='menu.css'/>
+    <script type='module' src='menu.mjs'></script>
+  </head>
+  <body>
+    <p><select id='select-areas'></select></p>
+    <p><select id='select-lines'></select></p>
+    <p><input type='date' id='input-date'/></p>
+  </body>
+</html>

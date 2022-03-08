@@ -13,6 +13,7 @@
 	"description": "__MSG_extensionDescription__",
 	"permissions": [
 		"*://*.ekitan.com/*",
+		"tabs",
 		"storage"
 	],
 	"incognito": "not_allowed",

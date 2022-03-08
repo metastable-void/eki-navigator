@@ -1,4 +1,4 @@
-// vim: ts=2 sw=2 et ai
+/* vim: set ts=2 sw=2 et ai : */
 /*
   Eki Navigator
   Copyright (C) 2022 真空 et al.
@@ -16,9 +16,3 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-
-document.querySelector('#button-open').addEventListener('click', (ev) => {
-  browser.tabs.create({
-    url: browser.runtime.getURL('/menu/menu.html'),
-  });
-});
