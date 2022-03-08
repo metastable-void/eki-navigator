@@ -150,7 +150,7 @@ globalThis.getStations = async (lineUrl, dt) => {
 globalThis.getTrains = async (lineStationUrl, date) => {
   //
   let tabObj = await browser.tabs.create({
-    url: lineStationUrl,
+    url: lineStationUrl + '?dt=' + encodeURIComponent(date),
     active: false,
   });
 
@@ -211,7 +211,7 @@ globalThis.getLineTrains = async (lineUrl, dt) => {
   const data = new Map;
   let date;
   for (const lineStationUrl of lineStationUrls.urls) {
-    const results = await getTrains(lineStationUrl);
+    const results = await getTrains(lineStationUrl, dt);
     for (const result of results.trains) {
       const [normalized, url] = normalizeTrainUrl(result.url);
       const urlObj = new URL(url);
@@ -338,6 +338,7 @@ globalThis.getLineTrainsAll = async (lineUrl, dt) => {
       if (!firstStation) {
         firstStation = station.station;
       }
+      const oldTimes = station.times;
       const times = station.times.map(time => time.replace(/[^0-9:]/gu, ''));
       const time = times.slice(-1)[0].replace(/:/gu, '');
       const key = `${time}-${station.station}-${train.trainId}`;
@@ -354,7 +355,8 @@ globalThis.getLineTrainsAll = async (lineUrl, dt) => {
         timetableData.dep = times[1];
       } else {
         const time = times[0];
-        if (time.match(/着/u)) {
+        const oldTime = oldTimes[0];
+        if (oldTime.match(/着/u)) {
           timetableData.arr = time;
           timetableData.dep = null;
         } else {
@@ -395,11 +397,55 @@ globalThis.getLineTrainsAll = async (lineUrl, dt) => {
   return result;
 };
 
+globalThis.downloadResult = async (data) => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
+  const url = URL.createObjectURL(blob);
+  try {
+    await browser.downloads.download({
+      url,
+      filename: `eki-navigator_${+new Date}.json`,
+      saveAs: false,
+      conflictAction: 'uniquify',
+    });
+  } finally {
+    console.log('Download queued');
+  }
+};
+
+const queue = [];
+let running = false;
+globalThis.runQueue = async () => {
+  if (running) {
+    return;
+  }
+  running = true;
+  while (queue.length) {
+    const message = queue.shift();
+    try {
+      const data = await getLineTrainsAll(message.lineUrl, message.dt);
+      await downloadResult(data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  running = false;
+};
+
+globalThis.queueTask = (message) => {
+  queue.push(message);
+  runQueue().catch((e) => {
+    console.error(e);
+  });
+};
+
 browser.runtime.onMessage.addListener((message) => {
   if (message.type == 'get_areas') {
     return openAreas();
   } else if (message.type == 'get_area_lines') {
     return getAreaLines(message.areaUrl);
+  } else if (message.type == 'queue_fetch_line') {
+   queueTask(message);
+   return Promise.resolve();
   }
   return false;
 });

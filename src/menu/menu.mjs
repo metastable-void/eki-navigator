@@ -59,3 +59,22 @@ areaSelect.addEventListener('change', (ev) => {
   });
 });
 
+const inputDate = document.querySelector('#input-date');
+const buttonStart = document.querySelector('#button-start');
+
+buttonStart.addEventListener('click', (ev) => {
+  if (!lineSelect.value) {
+    return;
+  }
+  if (!inputDate.value) {
+    return;
+  }
+  const dt = inputDate.value.split('-').join('');
+  browser.runtime.sendMessage({
+    type: 'queue_fetch_line',
+    lineUrl: lineSelect.value,
+    dt,
+  });
+  alert('予約しました。');
+});
+

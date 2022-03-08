@@ -14,7 +14,8 @@
 	"permissions": [
 		"*://*.ekitan.com/*",
 		"tabs",
-		"storage"
+		"storage",
+		"downloads"
 	],
 	"incognito": "not_allowed",
 	"background": {
