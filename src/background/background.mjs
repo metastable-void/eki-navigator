@@ -348,13 +348,19 @@ globalThis.getLineTrainsAll = async (lineUrl, dt) => {
       };
       const timetableData = {};
       timetableData.name = station.station;
-      timetableData.direction = train.directionId ? 'UP' : 'DN';
+      timetableData.direction = train.directionId ? 'DN' : 'UP';
       if (times[1]) {
         timetableData.arr = times[0];
         timetableData.dep = times[1];
       } else {
-        timetableData.arr = null;
-        timetableData.dep = times[0];
+        const time = times[0];
+        if (time.match(/着/u)) {
+          timetableData.arr = time;
+          timetableData.dep = null;
+        } else {
+          timetableData.arr = null;
+          timetableData.dep = time;
+        }
       }
       timetableData.platform = '';
       timetableData.number = train.trainId;
