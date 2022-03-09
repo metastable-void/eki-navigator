@@ -330,6 +330,7 @@ globalThis.exportOud2 = (data) => {
   result.push('FileType=OuDiaSecond.1.11');
   result.push('Rosen.');
   result.push(`Rosenmei=${data.railwayData.name}`);
+  result.push('KitenJikoku=400');
 
   const lineStations = new Set;
   const lineStationList = [];
@@ -442,6 +443,11 @@ globalThis.exportOud2 = (data) => {
     result.push('BackPatternIndex=0');
   }
 
+  const formatTime = (aTime) => {
+    const time = String(aTime);
+    return time.replace(/^0/, '').replaceAll(':', '');
+  };
+
   if (kudari.length) {
     result.push('Kudari.');
     for (const train of kudari) {
@@ -458,11 +464,11 @@ globalThis.exportOud2 = (data) => {
             if (time.name == lineStationList[i]) {
               found = true;
               if (!time.arr) {
-                stationTimes.push(`1;${time.dep.replaceAll(':', '')}$0`);
+                stationTimes.push(`1;${formatTime(time.dep)}$0`);
               } else if (!time.dep) {
-                stationTimes.push(`1;${time.arr.replaceAll(':', '')}/$0`);
+                stationTimes.push(`1;${formatTime(time.arr)}/$0`);
               } else {
-                stationTimes.push(`1;${time.arr.replaceAll(':', '')}/${time.dep.replaceAll(':', '')}$0`);
+                stationTimes.push(`1;${formatTime(time.arr)}/${formatTime(time.dep)}$0`);
               }
             }
           }
@@ -502,11 +508,11 @@ globalThis.exportOud2 = (data) => {
             if (time.name == lineStationList[i]) {
               found = true;
               if (!time.arr) {
-                stationTimes.push(`1;${time.dep.replaceAll(':', '')}$0`);
+                stationTimes.push(`1;${formatTime(time.dep)}$0`);
               } else if (!time.dep) {
-                stationTimes.push(`1;${time.arr.replaceAll(':', '')}/$0`);
+                stationTimes.push(`1;${formatTime(time.arr)}/$0`);
               } else {
-                stationTimes.push(`1;${time.arr.replaceAll(':', '')}/${time.dep.replaceAll(':', '')}$0`);
+                stationTimes.push(`1;${formatTime(time.arr)}/${formatTime(time.dep)}$0`);
               }
             }
           }
