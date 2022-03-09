@@ -325,6 +325,210 @@ globalThis.getLineTrainsAll = async (lineUrl, dt) => {
   return result;
 };
 
+globalThis.exportOud2 = (data) => {
+  let result = [];
+  result.push('FileType=OuDiaSecond.1.11');
+  result.push('Rosen.');
+  result.push(`Rosenmei=${data.railwayData.name}`);
+
+  const lineStations = new Set;
+  const lineStationList = [];
+  for (const station of data.stations) {
+    //
+    lineStations.add(station.name);
+    lineStationList.push(station.name);
+    result.push('Eki.');
+    result.push(`Ekimei=${station.name}`);
+    result.push('Ekijikokukeisiki=Jikokukeisiki_Hatsuchaku');
+    result.push('Ekikibo=Ekikibo_Ippan')
+    result.push('DownMain=0');
+    result.push('UpMain=0');
+    result.push('EkiTrack2Cont.');
+    result.push('EkiTrack2.');
+    result.push('TrackName=着発線0');
+    result.push('TrackRyakusyou=略称');
+    result.push('.');
+    result.push('.');
+    result.push('JikokuhyouJikokuDisplayKudari=0,1');
+    result.push('JikokuhyouJikokuDisplayNobori=0,1');
+    result.push('JikokuhyouSyubetsuChangeDisplayKudari=0,0,0,0,1');
+    result.push('JikokuhyouSyubetsuChangeDisplayNobori=0,0,0,0,1');
+    result.push('DiagramColorNextEki=0');
+    result.push('JikokuhyouOuterDisplayKudari=0,0');
+    result.push('JikokuhyouOuterDisplayNobori=0,0');
+    result.push('.');
+  }
+
+  const kudari = [];
+  const nobori = [];
+  const outerTerminals = new Set;
+  for (const key of Reflect.ownKeys(data.trains)) {
+    const trains = data.trains[key];
+    for (const trainKey of Reflect.ownKeys(trains)) {
+      const train = trains[trainKey];
+      if (!lineStationList.includes(train.origin)) {
+        outerTerminals.add(train.origin);
+      }
+      if (!lineStationList.includes(train.destination)) {
+        outerTerminals.add(train.destination);
+      }
+      const timetable = train.timetable;
+      let firstIndex = -1;
+      let lastIndex = -1;
+      for (const time of timetable) {
+        if (firstIndex < 0 && lineStationList.include(time.name)) {
+          firstIndex = lineStationList.indexOf(time.name);
+          train.firstStation = time.name;
+          train.firstIndex = firstIndex;
+        }
+        if (lineStationList.includes(time.name)) {
+          lastIndex = lineStationList.indexOf(time.name);
+          train.lastStation = time.name;
+          train.lastIndex = lastIndex;
+        }
+      }
+      let direction = void 0;
+      if (firstIndex == lastIndex) {
+        if (timetable[0]) {
+          if (timetable[0].direction == 'DN') {
+            direction = 'DN';
+          } else if (timetable[0].direction == 'UP') {
+            direction = 'UP';
+          }
+        }
+      } else if (firstIndex > lastIndex) {
+        direction = 'UP';
+      } else {
+        direction = 'DN';
+      }
+
+      if (direction == 'DN') {
+        kudari.push(train);
+      } else if (direction == 'UP') {
+        nobori.push(train);
+      }
+    }
+  }
+
+  /*
+  for (const outerTerminal of outerTerminals) {
+    result.push('OuterTerminal.');
+    result.push(`OuterTerminalEkimei=${outerTerminal}`);
+    result.push('.');
+  }
+  */
+
+  for (const type of Reflect.ownKeys(data.types)) {
+    //
+    result.push('Ressyasyubetsu.');
+    result.push(`Syubetsumei=${type}`);
+    result.push('.');
+  }
+
+  result.push('Dia.');
+  for (const key of Reflect.ownKeys(data.trains)) {
+    const trains = data.trains[key];
+    result.push(`DiaName=${key}`);
+    result.push('MainBackColorIndex=0');
+    result.push('SubBackColorIndex=1');
+    result.push('BackPatternIndex=0');
+  }
+
+  if (kudari.length) {
+    result.push('Kudari.');
+    for (const train of kudari) {
+      const timetable = train.timetable;
+      const stationTimes = [];
+      for (let i = 0; i < lineStationList.length; i++) {
+        if (i < train.firstIndex) {
+          stationTimes.push('0');
+        } else if (i > train.lastIndex) {
+          //stationTimes.push('0');
+        } else {
+          let found = false;
+          for (const time of timetable) {
+            if (time.name == lineStationList[i]) {
+              found = true;
+              if (!time.arr) {
+                stationTimes.push(`1;${time.dep.replaceAll(':', '')}$0`);
+              } else if (time.dep) {
+                stationTimes.push(`1;${time.arr.replaceAll(':', '')}$0`);
+              } else {
+                stationTimes.push(`1;${time.arr.replaceAll(':', '')}/${time.dep.replaceAll(':', '')}$0`);
+              }
+              stationTimes.push(`1`)
+            }
+          }
+          if (!found) {
+            stationTimes.push('2$0');
+          }
+        }
+      }
+      result.push('Ressya.');
+      result.push('Houkou=Kudari');
+      result.push(`Syubetsu=${data.types.indexOf(train.type)}`);
+      result.push(`Ressyabangou=${train.number}`);
+      result.push('Ressyamei=');
+      result.push('Gousuu=');
+      result.push(`EkiJikoku=${stationTimes.join(',')}`);
+      result.push('Operation0B=5/$');
+      result.push('Operation2A=5/$0');
+      result.push('Bikou=');
+      result.push('.');
+    }
+    result.push('.');
+  }
+
+  if (nobori.length) {
+    result.push('Nobori.');
+    for (const train of nobori) {
+      const timetable = train.timetable;
+      const stationTimes = [];
+      for (let i = lineStationList.length - 1; i >= 0; i--) {
+        if (i > train.firstIndex) {
+          stationTimes.push('0');
+        } else if (i < train.lastIndex) {
+          //stationTimes.push('0');
+        } else {
+          let found = false;
+          for (const time of timetable) {
+            if (time.name == lineStationList[i]) {
+              found = true;
+              if (!time.arr) {
+                stationTimes.push(`1;${time.dep.replaceAll(':', '')}$0`);
+              } else if (time.dep) {
+                stationTimes.push(`1;${time.arr.replaceAll(':', '')}$0`);
+              } else {
+                stationTimes.push(`1;${time.arr.replaceAll(':', '')}/${time.dep.replaceAll(':', '')}$0`);
+              }
+              stationTimes.push(`1`)
+            }
+          }
+          if (!found) {
+            stationTimes.push('2$0');
+          }
+        }
+      }
+      result.push('Ressya.');
+      result.push('Houkou=Kudari');
+      result.push(`Syubetsu=${data.types.indexOf(train.type)}`);
+      result.push(`Ressyabangou=${train.number}`);
+      result.push('Ressyamei=');
+      result.push('Gousuu=');
+      result.push(`EkiJikoku=${stationTimes.join(',')}`);
+      result.push('Operation0B=5/$');
+      result.push('Operation2A=5/$0');
+      result.push('Bikou=');
+      result.push('.');
+    }
+    result.push('.');
+  }
+  result.push('.');
+
+  result.push('.');
+  return result.join('\n');
+};
+
 globalThis.downloadResult = async (data) => {
   const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
   const url = URL.createObjectURL(blob);
