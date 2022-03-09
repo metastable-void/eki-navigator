@@ -346,7 +346,7 @@ globalThis.exportOud2 = (data) => {
     result.push('EkiTrack2Cont.');
     result.push('EkiTrack2.');
     result.push('TrackName=着発線0');
-    result.push('TrackRyakusyou=');
+    result.push('TrackRyakusyou=略称');
     result.push('.');
     result.push('.');
     result.push('JikokuhyouJikokuDisplayKudari=0,1');
