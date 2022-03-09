@@ -346,7 +346,7 @@ globalThis.exportOud2 = (data) => {
     result.push('EkiTrack2Cont.');
     result.push('EkiTrack2.');
     result.push('TrackName=着発線0');
-    result.push('TrackRyakusyou=略称');
+    result.push('TrackRyakusyou=');
     result.push('.');
     result.push('.');
     result.push('JikokuhyouJikokuDisplayKudari=0,1');
@@ -458,9 +458,9 @@ globalThis.exportOud2 = (data) => {
             if (time.name == lineStationList[i]) {
               found = true;
               if (!time.arr) {
-                stationTimes.push(`1;${time.dep.replaceAll(':', '')}/$0`);
+                stationTimes.push(`1;${time.dep.replaceAll(':', '')}$0`);
               } else if (!time.dep) {
-                stationTimes.push(`1;${time.arr.replaceAll(':', '')}$0`);
+                stationTimes.push(`1;${time.arr.replaceAll(':', '')}/$0`);
               } else {
                 stationTimes.push(`1;${time.arr.replaceAll(':', '')}/${time.dep.replaceAll(':', '')}$0`);
               }
@@ -502,9 +502,9 @@ globalThis.exportOud2 = (data) => {
             if (time.name == lineStationList[i]) {
               found = true;
               if (!time.arr) {
-                stationTimes.push(`1;${time.dep.replaceAll(':', '')}/$0`);
+                stationTimes.push(`1;${time.dep.replaceAll(':', '')}$0`);
               } else if (!time.dep) {
-                stationTimes.push(`1;${time.arr.replaceAll(':', '')}$0`);
+                stationTimes.push(`1;${time.arr.replaceAll(':', '')}/$0`);
               } else {
                 stationTimes.push(`1;${time.arr.replaceAll(':', '')}/${time.dep.replaceAll(':', '')}$0`);
               }
