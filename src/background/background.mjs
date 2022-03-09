@@ -458,7 +458,7 @@ globalThis.exportOud2 = (data) => {
             if (time.name == lineStationList[i]) {
               found = true;
               if (!time.arr) {
-                stationTimes.push(`1;${time.dep.replaceAll(':', '')}$0`);
+                stationTimes.push(`1;${time.dep.replaceAll(':', '')}/$0`);
               } else if (!time.dep) {
                 stationTimes.push(`1;${time.arr.replaceAll(':', '')}$0`);
               } else {
@@ -502,7 +502,7 @@ globalThis.exportOud2 = (data) => {
             if (time.name == lineStationList[i]) {
               found = true;
               if (!time.arr) {
-                stationTimes.push(`1;${time.dep.replaceAll(':', '')}$0`);
+                stationTimes.push(`1;${time.dep.replaceAll(':', '')}/$0`);
               } else if (!time.dep) {
                 stationTimes.push(`1;${time.arr.replaceAll(':', '')}$0`);
               } else {
