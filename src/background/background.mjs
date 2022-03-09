@@ -17,10 +17,9 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-globalThis.openAreas = async () => {
-  //
+globalThis.loadPage = async (url) => {
   let tabObj = await browser.tabs.create({
-    url: 'https://ekitan.com/timetable/railway',
+    url,
     active: false,
   });
 
@@ -41,6 +40,12 @@ globalThis.openAreas = async () => {
       tabId: tabObj.id,
     });
   });
+
+  return tabObj;
+};
+
+globalThis.openAreas = async () => {
+  let tabObj = await loadPage('https://ekitan.com/timetable/railway');
 
   const results = await browser.tabs.executeScript(tabObj.id, {
     code: `
@@ -58,28 +63,7 @@ globalThis.openAreas = async () => {
 };
 
 globalThis.getAreaLines = async (areaUrl) => {
-  let tabObj = await browser.tabs.create({
-    url: areaUrl,
-    active: false,
-  });
-
-  const targetTabId = tabObj.id;
-  tabObj = await new Promise((res) => {
-    const loadedListener = (tabId, changeInfo, tabObj) => {
-      if (tabObj.status != 'complete') {
-        return;
-      }
-      if (tabId != targetTabId) {
-        return;
-      }
-      browser.tabs.onUpdated.removeListener(loadedListener);
-      console.log('Loaded: %s', tabObj.url);
-      res(tabObj);
-    };
-    browser.tabs.onUpdated.addListener(loadedListener, {
-      tabId: tabObj.id,
-    });
-  });
+  let tabObj = await loadPage(areaUrl);
 
   const results = await browser.tabs.executeScript(tabObj.id, {
     code: `
@@ -97,28 +81,7 @@ globalThis.getAreaLines = async (areaUrl) => {
 };
 
 globalThis.getStations = async (lineUrl, dt) => {
-  let tabObj = await browser.tabs.create({
-    url: lineUrl + '?dt=' + encodeURIComponent(dt),
-    active: false,
-  });
-
-  const targetTabId = tabObj.id;
-  tabObj = await new Promise((res) => {
-    const loadedListener = (tabId, changeInfo, tabObj) => {
-      if (tabObj.status != 'complete') {
-        return;
-      }
-      if (tabId != targetTabId) {
-        return;
-      }
-      browser.tabs.onUpdated.removeListener(loadedListener);
-      console.log('Loaded: %s', tabObj.url);
-      res(tabObj);
-    };
-    browser.tabs.onUpdated.addListener(loadedListener, {
-      tabId: tabObj.id,
-    });
-  });
+  let tabObj = await loadPage(lineUrl + '?dt=' + encodeURIComponent(dt));
 
   const results = await browser.tabs.executeScript(tabObj.id, {
     code: `
@@ -148,29 +111,7 @@ globalThis.getStations = async (lineUrl, dt) => {
 };
 
 globalThis.getTrains = async (lineStationUrl, date) => {
-  //
-  let tabObj = await browser.tabs.create({
-    url: lineStationUrl + '?dt=' + encodeURIComponent(date),
-    active: false,
-  });
-
-  const targetTabId = tabObj.id;
-  tabObj = await new Promise((res) => {
-    const loadedListener = (tabId, changeInfo, tabObj) => {
-      if (tabObj.status != 'complete') {
-        return;
-      }
-      if (tabId != targetTabId) {
-        return;
-      }
-      browser.tabs.onUpdated.removeListener(loadedListener);
-      console.log('Loaded: %s', tabObj.url);
-      res(tabObj);
-    };
-    browser.tabs.onUpdated.addListener(loadedListener, {
-      tabId: tabObj.id,
-    });
-  });
+  let tabObj = await loadPage(lineStationUrl + '?dt=' + encodeURIComponent(date));
 
   const results = await browser.tabs.executeScript(tabObj.id, {
     code: `
@@ -269,28 +210,7 @@ globalThis.normalizeTrainUrl = (trainUrl) => {
 };
 
 globalThis.getTrainDetails = async (trainUrl) => {
-  let tabObj = await browser.tabs.create({
-    url: trainUrl,
-    active: false,
-  });
-
-  const targetTabId = tabObj.id;
-  tabObj = await new Promise((res) => {
-    const loadedListener = (tabId, changeInfo, tabObj) => {
-      if (tabObj.status != 'complete') {
-        return;
-      }
-      if (tabId != targetTabId) {
-        return;
-      }
-      browser.tabs.onUpdated.removeListener(loadedListener);
-      console.log('Loaded: %s', tabObj.url);
-      res(tabObj);
-    };
-    browser.tabs.onUpdated.addListener(loadedListener, {
-      tabId: tabObj.id,
-    });
-  });
+  let tabObj = await loadPage(trainUrl);
 
   const results = await browser.tabs.executeScript(tabObj.id, {
     code: `
