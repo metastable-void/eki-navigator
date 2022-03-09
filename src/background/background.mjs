@@ -424,6 +424,12 @@ globalThis.exportOud2 = (data) => {
     types.push(type);
     result.push('Ressyasyubetsu.');
     result.push(`Syubetsumei=${type}`);
+    result.push('JikokuhyouMojiColor=00000000');
+    result.push('JikokuhyouFontIndex=0');
+    result.push('JikokuhyouBackColor=00FFFFFF');
+    result.push('DiagramSenColor=00000000');
+    result.push('DiagramSenStyle=SenStyle_Jissen');
+    result.push('StopMarkDrawType=EStopMarkDrawType_DrawOnStop');
     result.push('.');
   }
 
@@ -510,7 +516,7 @@ globalThis.exportOud2 = (data) => {
         }
       }
       result.push('Ressya.');
-      result.push('Houkou=Kudari');
+      result.push('Houkou=Nobori');
       result.push(`Syubetsu=${types.indexOf(train.type)}`);
       result.push(`Ressyabangou=${train.number}`);
       result.push('Ressyamei=');
