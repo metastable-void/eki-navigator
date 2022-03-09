@@ -458,7 +458,6 @@ globalThis.exportOud2 = (data) => {
               } else {
                 stationTimes.push(`1;${time.arr.replaceAll(':', '')}/${time.dep.replaceAll(':', '')}$0`);
               }
-              stationTimes.push(`1`)
             }
           }
           if (!found) {
@@ -503,7 +502,6 @@ globalThis.exportOud2 = (data) => {
               } else {
                 stationTimes.push(`1;${time.arr.replaceAll(':', '')}/${time.dep.replaceAll(':', '')}$0`);
               }
-              stationTimes.push(`1`)
             }
           }
           if (!found) {
@@ -528,17 +526,79 @@ globalThis.exportOud2 = (data) => {
   result.push('.');
 
   result.push('.');
-  return result.join('\n');
+  const footer =
+`DispProp.
+JikokuhyouFont=PointTextHeight=9;Facename=Meiryo UI
+JikokuhyouFont=PointTextHeight=9;Facename=Meiryo UI;Bold=1
+JikokuhyouFont=PointTextHeight=9;Facename=Meiryo UI;Itaric=1
+JikokuhyouFont=PointTextHeight=9;Facename=Meiryo UI;Bold=1;Itaric=1
+JikokuhyouFont=PointTextHeight=9;Facename=Meiryo UI
+JikokuhyouFont=PointTextHeight=9;Facename=Meiryo UI
+JikokuhyouFont=PointTextHeight=9;Facename=Meiryo UI
+JikokuhyouFont=PointTextHeight=9;Facename=Meiryo UI
+JikokuhyouVFont=PointTextHeight=9;Facename=@メイリオ
+DiaEkimeiFont=PointTextHeight=9;Facename=Meiryo UI
+DiaJikokuFont=PointTextHeight=9;Facename=Meiryo UI
+DiaRessyaFont=PointTextHeight=9;Facename=Meiryo UI
+OperationTableFont=PointTextHeight=9;Facename=Meiryo UI
+AllOperationTableJikokuFont=PointTextHeight=8;Facename=Meiryo UI
+CommentFont=PointTextHeight=9;Facename=Meiryo UI
+DiaMojiColor=00000000
+DiaBackColor=00FFFFFF
+DiaBackColor=00FFFFFF
+DiaBackColor=00FFFFFF
+DiaBackColor=00FFFFFF
+DiaBackColor=00FFFFFF
+DiaRessyaColor=00000000
+DiaJikuColor=00C0C0C0
+JikokuhyouBackColor=00FFFFFF
+JikokuhyouBackColor=00F0F0F0
+JikokuhyouBackColor=00FFFFFF
+JikokuhyouBackColor=00FFFFFF
+StdOpeTimeLowerColor=00E0E0FF
+StdOpeTimeHigherColor=00FFFFE0
+StdOpeTimeUndefColor=0080FFFF
+StdOpeTimeIllegalColor=00A0A0A0
+OperationStringColor=00000000
+OperationGridColor=00000000
+EkimeiLength=6
+JikokuhyouRessyaWidth=5
+AnySecondIncDec1=5
+AnySecondIncDec2=15
+DisplayRessyamei=1
+DisplayOuterTerminalEkimeiOriginSide=1
+DisplayOuterTerminalEkimeiTerminalSide=1
+DiagramDisplayOuterTerminal=0
+SecondRoundChaku=0
+SecondRoundHatsu=0
+Display2400=0
+OperationNumberRows=1
+DisplayInOutLinkCode=0
+.
+FileTypeAppComment=Eki Navigator 1`.split('\n');
+  for (const line of footer) {
+    result.push(line);
+  }
+  return '\ufeff' + result.join('\r\n');
 };
 
 globalThis.downloadResult = async (data) => {
   const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
   const url = URL.createObjectURL(blob);
   const date = (new Date).toLocaleDateString('ja',{year: 'numeric', month: '2-digit', day: '2-digit'}).replaceAll('/', '');
+  
+  const blob2 = new Blob([exportOud2(data)], {type: 'application/octet-stream'});
+  const url2 = URL.createObjectURL(blob2);
   try {
     await browser.downloads.download({
       url,
       filename: `eki-navigator_${data.railwayData.name}_${date}_${+new Date}.json`,
+      saveAs: false,
+      conflictAction: 'uniquify',
+    });
+    await browser.downloads.download({
+      url: url2,
+      filename: `eki-navigator_${data.railwayData.name}_${date}_${+new Date}.oud2`,
       saveAs: false,
       conflictAction: 'uniquify',
     });
