@@ -376,7 +376,7 @@ globalThis.exportOud2 = (data) => {
       let firstIndex = -1;
       let lastIndex = -1;
       for (const time of timetable) {
-        if (firstIndex < 0 && lineStationList.include(time.name)) {
+        if (firstIndex < 0 && lineStationList.includes(time.name)) {
           firstIndex = lineStationList.indexOf(time.name);
           train.firstStation = time.name;
           train.firstIndex = firstIndex;
@@ -418,8 +418,10 @@ globalThis.exportOud2 = (data) => {
   }
   */
 
+  const types = [];
   for (const type of Reflect.ownKeys(data.types)) {
     //
+    types.push(type);
     result.push('Ressyasyubetsu.');
     result.push(`Syubetsumei=${type}`);
     result.push('.');
@@ -451,7 +453,7 @@ globalThis.exportOud2 = (data) => {
               found = true;
               if (!time.arr) {
                 stationTimes.push(`1;${time.dep.replaceAll(':', '')}$0`);
-              } else if (time.dep) {
+              } else if (!time.dep) {
                 stationTimes.push(`1;${time.arr.replaceAll(':', '')}$0`);
               } else {
                 stationTimes.push(`1;${time.arr.replaceAll(':', '')}/${time.dep.replaceAll(':', '')}$0`);
@@ -466,7 +468,7 @@ globalThis.exportOud2 = (data) => {
       }
       result.push('Ressya.');
       result.push('Houkou=Kudari');
-      result.push(`Syubetsu=${data.types.indexOf(train.type)}`);
+      result.push(`Syubetsu=${types.indexOf(train.type)}`);
       result.push(`Ressyabangou=${train.number}`);
       result.push('Ressyamei=');
       result.push('Gousuu=');
@@ -496,7 +498,7 @@ globalThis.exportOud2 = (data) => {
               found = true;
               if (!time.arr) {
                 stationTimes.push(`1;${time.dep.replaceAll(':', '')}$0`);
-              } else if (time.dep) {
+              } else if (!time.dep) {
                 stationTimes.push(`1;${time.arr.replaceAll(':', '')}$0`);
               } else {
                 stationTimes.push(`1;${time.arr.replaceAll(':', '')}/${time.dep.replaceAll(':', '')}$0`);
@@ -511,7 +513,7 @@ globalThis.exportOud2 = (data) => {
       }
       result.push('Ressya.');
       result.push('Houkou=Kudari');
-      result.push(`Syubetsu=${data.types.indexOf(train.type)}`);
+      result.push(`Syubetsu=${types.indexOf(train.type)}`);
       result.push(`Ressyabangou=${train.number}`);
       result.push('Ressyamei=');
       result.push('Gousuu=');
