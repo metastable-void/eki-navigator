@@ -174,12 +174,12 @@ globalThis.getTrains = async (lineStationUrl, date) => {
 
   const results = await browser.tabs.executeScript(tabObj.id, {
     code: `
-      {
+      const data = {
+        trains: []
+      };
+      try {
         const tabNames = document.querySelectorAll('.ek-direction_tab');
         const tabs = document.querySelectorAll('.search-result .tab-content-inner');
-        const data = {
-          trains: []
-        };
         let i = 0;
         for (const tab of tabs) {
           const direction = tabNames[i].textContent.trim();
@@ -196,10 +196,12 @@ globalThis.getTrains = async (lineStationUrl, date) => {
           }
           i++;
         }
-        
+         
         data.date = document.querySelector('.search-result-footer .date').textContent.trim();
-        data;
+      } catch (e) {
+        console.error(e);
       }
+      data;
     `
   });
   await browser.tabs.remove(tabObj.id);
@@ -212,6 +214,10 @@ globalThis.getLineTrains = async (lineUrl, dt) => {
   let date;
   for (const lineStationUrl of lineStationUrls.urls) {
     const results = await getTrains(lineStationUrl, dt);
+    if (!results || !results.trains) {
+      console.log('Skipping data:', results);
+      continue;
+    }
     for (const result of results.trains) {
       const [normalized, url] = normalizeTrainUrl(result.url);
       const urlObj = new URL(url);
@@ -225,7 +231,9 @@ globalThis.getLineTrains = async (lineUrl, dt) => {
         direction: result.direction,
         directionId: result.directionId,
       });
-      date = results.date;
+      if (results.date) {
+        date = results.date;
+      }
     }
   }
   const lineId = lineUrl.split('/').filter(a => a).slice(-1)[0];
@@ -400,10 +408,11 @@ globalThis.getLineTrainsAll = async (lineUrl, dt) => {
 globalThis.downloadResult = async (data) => {
   const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
   const url = URL.createObjectURL(blob);
+  const date = (new Date).toLocaleDateString('ja',{year: 'numeric', month: '2-digit', day: '2-digit'}).replaceAll('/', '');
   try {
     await browser.downloads.download({
       url,
-      filename: `eki-navigator_${+new Date}.json`,
+      filename: `eki-navigator_${data.railwayData.name}_${date}_${+new Date}.json`,
       saveAs: false,
       conflictAction: 'uniquify',
     });
