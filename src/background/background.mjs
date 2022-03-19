@@ -332,11 +332,8 @@ globalThis.exportOud2 = (data) => {
   result.push(`Rosenmei=${data.railwayData.name}`);
   result.push('KitenJikoku=400');
 
-  const lineStations = new Set;
   const lineStationList = [];
   for (const station of data.stations) {
-    //
-    lineStations.add(station.name);
     lineStationList.push(station.name);
     result.push('Eki.');
     result.push(`Ekimei=${station.name}`);
