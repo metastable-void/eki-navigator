@@ -17,6 +17,13 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+const cache = {
+  areas: null,
+  areaLines: new Map,
+  lines: new Map,
+  trains: new Map, // key = lineStationUrl + \u0000 + dt
+};
+
 globalThis.loadPage = async (url) => {
   let tabObj = await browser.tabs.create({
     url,
@@ -45,6 +52,10 @@ globalThis.loadPage = async (url) => {
 };
 
 globalThis.openAreas = async () => {
+  if (cache.areas) {
+    return cache.areas;
+  }
+
   let tabObj = await loadPage('https://ekitan.com/timetable/railway');
 
   const results = await browser.tabs.executeScript(tabObj.id, {
@@ -59,10 +70,15 @@ globalThis.openAreas = async () => {
     `
   });
   await browser.tabs.remove(tabObj.id);
-  return results[0];
+  cache.areas = results[0];
+  return cache.areas;
 };
 
 globalThis.getAreaLines = async (areaUrl) => {
+  if (cache.areaLines.has(areaUrl)) {
+    return cache.areaLines.get(areaUrl);
+  }
+
   let tabObj = await loadPage(areaUrl);
 
   const results = await browser.tabs.executeScript(tabObj.id, {
@@ -77,67 +93,82 @@ globalThis.getAreaLines = async (areaUrl) => {
     `
   });
   await browser.tabs.remove(tabObj.id);
-  return results[0];
+  cache.areaLines.set(areaUrl, results[0]);
+  return cache.areaLines.get(areaUrl);
 };
 
-globalThis.getStations = async (lineUrl, dt) => {
-  let tabObj = await loadPage(lineUrl + '?dt=' + encodeURIComponent(dt));
+globalThis.getStations = async (lineUrl) => {
+  if (cache.lines.has(lineUrl)) {
+    return cache.lines.get(lineUrl);
+  }
+  let tabObj = await loadPage(lineUrl);
 
   const results = await browser.tabs.executeScript(tabObj.id, {
     code: `
       const line = document.querySelector('h1[data-event_rep="ぱんくず-駅探"]').textContent.trim();
-      const stations = document.querySelectorAll('.timetable-area li > a');
+      const stationElements = document.querySelectorAll('.timetable-area dl');
       const data = {
-        urls: [],
+        name: line,
         stations: [],
-        line,
       };
-      for (const station of stations) {
-        data.urls.push(station.href);
+      for (const stationElement of stationElements) {
+        const station = {};
+        station.lineStationUrls = {};
+        const stationLabel = stationElement.querySelector('dt > a');
+        station.name = stationLabel.textContent.trim().replace(/駅($|[\\(（].*)/gu, '$1');
+        station.url = stationLabel.href;
+        const stationLinePages = stationElement.querySelectorAll('li > a');
+        for (const stationLinePage of stationLinePages) {
+          const label = stationLinePage.textContent.trim();
+          station.lineStationUrls[label] = stationLinePage.href;
+        }
+        data.stations.push(station);
       }
-      const stations2 = document.querySelectorAll('.timetable-area dt > a');
-      for (const station of stations2) {
-        data.stations.push({
-          url: station.href,
-          name: station.textContent.trim(),
-        })
-      }
-      data.urls = [... new Set(data.urls)];
       data;
     `
   });
   await browser.tabs.remove(tabObj.id);
+  const data = results[0];
+  cache.lines.set(lineUrl, data);
   return results[0];
 };
 
 globalThis.getTrains = async (lineStationUrl, date) => {
+  const normalizedUrl = String(lineStationUrl).replace(/\/[^\/]+$/, '');
+  const key = normalizedUrl + '\u0000' + date;
+  if (cache.trains.has(key)) {
+    return cache.trains.get(key);
+  }
+
   let tabObj = await loadPage(lineStationUrl + '?dt=' + encodeURIComponent(date));
 
   const results = await browser.tabs.executeScript(tabObj.id, {
     code: `
       const data = {
-        trains: []
+        directions: {},
       };
       try {
         const tabNames = document.querySelectorAll('.ek-direction_tab');
         const tabs = document.querySelectorAll('.search-result .tab-content-inner');
         let i = 0;
-        for (const tab of tabs) {
-          const direction = tabNames[i].textContent.trim();
-          const stations = tab.querySelectorAll('.ek-train-tooltip');
-          for (const station of stations) {
+        for (let i = 0; i < tabs.length; i++) {
+          const tab = tabs[i];
+          const tabName = tabNames[i];
+          const direction = tabName.textContent.trim();
+          const trains = data.directions[direction] = [];
+          const trainTimes = tab.querySelectorAll('.ek-train-tooltip');
+          for (const trainTime of trainTimes) {
             const trainData = {};
-            const link = station.querySelector('a.ek-train-link');
+            const link = trainTime.querySelector('a.ek-train-link');
             trainData.url = link.href;
-            trainData.dest = station.dataset.dest;
-            trainData.type = station.dataset.trType;
+            trainData.dest = trainTime.dataset.dest;
+            trainData.type = trainTime.dataset.trType;
             trainData.direction = direction;
-            trainData.directionId = tabNames[i].dataset.ekDirection_code - 1;
-            data.trains.push(trainData);
+            trainData.directionId = tabNames[i].dataset.ekDirection_code;
+            trains.push(trainData);
           }
           i++;
         }
-         
         data.date = document.querySelector('.search-result-footer .date').textContent.trim();
       } catch (e) {
         console.error(e);
@@ -146,41 +177,57 @@ globalThis.getTrains = async (lineStationUrl, date) => {
     `
   });
   await browser.tabs.remove(tabObj.id);
-  return results[0];
+  const data = results[0];
+  cache.trains.set(key, data);
+  return cache.trains.get(key);
 };
 
 globalThis.getLineTrains = async (lineUrl, dt) => {
-  const lineStationUrls = await getStations(lineUrl, dt);
+  dt = String(dt);
+  const line = await getStations(lineUrl, dt);
   const data = new Map;
   let date;
-  for (const lineStationUrl of lineStationUrls.urls) {
-    const results = await getTrains(lineStationUrl, dt);
-    if (!results || !results.trains) {
-      console.log('Skipping data:', results);
+  for (const station of line.stations) {
+    if (!station.trainsByDate) {
+      station.trainsByDate = {};
+    }
+    if (!station.trainsByDate[dt]) {
+      const lineStations = Reflect.ownKeys(station.lineStationUrls);
+      for (const directionLabel of lineStations) {
+        const lineStationUrl = station.lineStationUrls[directionLabel];
+        const results = await getTrains(lineStationUrl, dt);
+        if (!results || !results.directions) {
+          console.log('Skipping data:', results);
+          continue;
+        }
+        station.trainsByDate[dt] = results;
+        break;
+      }
+    }
+    if (!station.trainsByDate[dt]) {
       continue;
     }
-    for (const result of results.trains) {
-      const [normalized, url] = normalizeTrainUrl(result.url);
-      const urlObj = new URL(url);
-      const tx = urlObj.searchParams.get('tx');
-      data.set(normalized, {
-        url,
-        trainId: tx.split('-')[2],
-        trainId2: tx.split('-').slice(-2).join('-'),
-        dest: result.dest,
-        type: result.type,
-        direction: result.direction,
-        directionId: result.directionId,
-      });
-      if (results.date) {
-        date = results.date;
+    const trainsData = station.trainsByDate[dt];
+    if (trainsData.date) {
+      date = trainsData.date;
+    }
+    const directions = Reflect.ownKeys(trainsData.directions);
+    for (const direction of directions) {
+      const trains = trainsData.directions[direction];
+      for (const train of trains) {
+        const [normalized, url] = normalizeTrainUrl(train.url);
+        const urlObj = new URL(url);
+        const tx = urlObj.searchParams.get('tx');
+        train.trainId = tx.split('-')[2] || '';
+        train.trainId2 = tx.split('-').slice(-2).join('-') || '';
+        data.set(normalized, train);
       }
     }
   }
   const lineId = lineUrl.split('/').filter(a => a).slice(-1)[0];
   return {
-    stations: lineStationUrls.stations,
-    line: lineStationUrls.line,
+    stations: line.stations,
+    line: line.name,
     trainUrls: [... data.values()],
     date,
     railwayData: {
@@ -243,7 +290,7 @@ globalThis.getLineTrainsAll = async (lineUrl, dt) => {
   result.railwayData.name = data.line || '';
   result.stations = data.stations.map((station) => {
     return {
-      name: station.name.replace(/駅($|\(.*)/gu, '$1'),
+      name: station.name.replace(/駅($|[\(（].*)/gu, '$1'),
       url: station.url,
     };
   });
@@ -591,23 +638,22 @@ FileTypeAppComment=Eki Navigator 1`.split('\n');
   return '\ufeff' + result.join('\r\n');
 };
 
-globalThis.downloadResult = async (data) => {
+globalThis.downloadResult = async (data, dt) => {
   const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
   const url = URL.createObjectURL(blob);
-  const date = (new Date).toLocaleDateString('ja',{year: 'numeric', month: '2-digit', day: '2-digit'}).replaceAll('/', '');
   
   const blob2 = new Blob([exportOud2(data)], {type: 'application/octet-stream'});
   const url2 = URL.createObjectURL(blob2);
   try {
     await browser.downloads.download({
       url,
-      filename: `eki-navigator_${data.railwayData.name}_${date}_${+new Date}.json`,
+      filename: `eki-navigator_${data.railwayData.name}_${dt}_${+new Date}.json`,
       saveAs: false,
       conflictAction: 'uniquify',
     });
     await browser.downloads.download({
       url: url2,
-      filename: `eki-navigator_${data.railwayData.name}_${date}_${+new Date}.oud2`,
+      filename: `eki-navigator_${data.railwayData.name}_${dt}_${+new Date}.oud2`,
       saveAs: false,
       conflictAction: 'uniquify',
     });
@@ -627,7 +673,7 @@ globalThis.runQueue = async () => {
     const message = queue.shift();
     try {
       const data = await getLineTrainsAll(message.lineUrl, message.dt);
-      await downloadResult(data);
+      await downloadResult(data, message.dt);
     } catch (e) {
       console.error(e);
     }
