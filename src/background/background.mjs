@@ -290,7 +290,7 @@ globalThis.getLineTrainsAll = async (lineUrl, dt) => {
   result.railwayData.name = data.line || '';
   result.stations = data.stations.map((station) => {
     return {
-      name: station.name.replace(/駅($|[\(（].*)/gu, '$1'),
+      name: station.name.replace(/駅\s*($|[\(（].*)/gu, '$1'),
       url: station.url,
     };
   });
